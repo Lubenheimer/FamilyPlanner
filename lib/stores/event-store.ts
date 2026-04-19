@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { expandRecurring } from "@/lib/rrule";
 
 export type EventSource = "local" | "google" | "outlook";
 
@@ -8,14 +9,14 @@ export interface CalendarEvent {
   title: string;
   description?: string;
   location?: string;
-  startsAt: string; // ISO-String
-  endsAt: string;   // ISO-String
+  startsAt: string;   // ISO-String (UTC)
+  endsAt: string;     // ISO-String (UTC)
   allDay: boolean;
-  rrule?: string;
+  rrule?: string;     // serialisiertes RRule-Objekt
   colorOverride?: string;
-  attendeeIds: string[]; // FamilyMember IDs
+  attendeeIds: string[];
   source: EventSource;
-  createdBy: string; // FamilyMember ID
+  createdBy: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,12 +24,12 @@ export interface CalendarEvent {
 interface EventState {
   events: CalendarEvent[];
 
-  addEvent: (event: Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">) => CalendarEvent;
+  addEvent: (e: Omit<CalendarEvent, "id" | "createdAt" | "updatedAt">) => CalendarEvent;
   updateEvent: (id: string, data: Partial<Omit<CalendarEvent, "id" | "createdAt">>) => void;
   deleteEvent: (id: string) => void;
 
-  // Hilfsfunktion: Events in einem Zeitraum
-  getEventsInRange: (from: string, to: string) => CalendarEvent[];
+  /** Gibt alle (ggf. expandierten) Events im Zeitraum zurück */
+  getEventsInRange: (from: Date, to: Date) => CalendarEvent[];
 }
 
 export const useEventStore = create<EventState>()(
@@ -48,27 +49,39 @@ export const useEventStore = create<EventState>()(
         return newEvent;
       },
 
-      updateEvent: (id, data) => {
+      updateEvent: (id, data) =>
         set((s) => ({
           events: s.events.map((e) =>
             e.id === id
               ? { ...e, ...data, updatedAt: new Date().toISOString() }
               : e
           ),
-        }));
-      },
+        })),
 
       deleteEvent: (id) =>
         set((s) => ({ events: s.events.filter((e) => e.id !== id) })),
 
       getEventsInRange: (from, to) => {
-        const start = new Date(from);
-        const end = new Date(to);
-        return get().events.filter((e) => {
-          const eStart = new Date(e.startsAt);
-          const eEnd = new Date(e.endsAt);
-          return eStart <= end && eEnd >= start;
-        });
+        const all = get().events;
+        const result: CalendarEvent[] = [];
+
+        for (const event of all) {
+          if (event.rrule) {
+            // Wiederkehrende Events expandieren
+            const expanded = expandRecurring(event, from, to);
+            result.push(...expanded);
+          } else {
+            const start = new Date(event.startsAt);
+            const end = new Date(event.endsAt);
+            if (start <= to && end >= from) {
+              result.push(event);
+            }
+          }
+        }
+
+        return result.sort(
+          (a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()
+        );
       },
     }),
     { name: "family-planner:events" }
