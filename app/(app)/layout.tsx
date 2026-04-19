@@ -1,16 +1,27 @@
-import { auth } from "@/lib/auth";
-import { redirect } from "next/navigation";
-import { AppNav } from "@/components/layout/app-nav";
-import type { ReactNode } from "react";
+"use client";
 
-export default async function AppLayout({ children }: { children: ReactNode }) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  if (!session.user.familyId) redirect("/onboarding");
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useFamilyStore, useIsSetup } from "@/lib/stores/family-store";
+import { AppNav } from "@/components/layout/app-nav";
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
+  const isSetup = useIsSetup();
+  const currentMemberId = useFamilyStore((s) => s.currentMemberId);
+  const members = useFamilyStore((s) => s.members);
+  const currentMember = members.find((m) => m.id === currentMemberId) ?? null;
+
+  useEffect(() => {
+    if (!isSetup) router.replace("/onboarding");
+    else if (!currentMemberId) router.replace("/login");
+  }, [isSetup, currentMemberId, router]);
+
+  if (!currentMember) return null;
 
   return (
     <div className="flex flex-col min-h-screen">
-      <AppNav user={session.user} />
+      <AppNav member={currentMember} />
       <main className="flex-1 container mx-auto px-4 py-6 max-w-6xl">
         {children}
       </main>

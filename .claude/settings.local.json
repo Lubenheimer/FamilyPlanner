@@ -8,7 +8,14 @@
       "Bash(rm -rf \"C:/Users/micro/Documents/Coding/family-planner-tmp\")",
       "Bash(cp -r \"C:/Users/micro/Documents/Coding/family-planner-tmp/app\" \"C:/Users/micro/Documents/Coding/FamilyPlanner/\")",
       "Bash(cp -r \"C:/Users/micro/Documents/Coding/family-planner-tmp/public\" \"C:/Users/micro/Documents/Coding/FamilyPlanner/\")",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npx shadcn@latest add card input label toast badge avatar select separator form dialog --yes)",
+      "Bash(npx shadcn@latest add card input label sonner badge avatar select separator form dialog dropdown-menu --yes)",
+      "Bash(npx shadcn@latest add form --yes)",
+      "Bash(npx tsc *)",
+      "Bash(gh auth *)",
+      "Bash(npm uninstall *)",
+      "Bash(npm run *)"
     ]
   }
 }
