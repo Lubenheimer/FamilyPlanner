@@ -6,6 +6,8 @@ import { useEventStore } from "@/lib/stores/event-store";
 import type { FamilyMember } from "@/lib/stores/family-store";
 import { getWeekDays, formatDate, isToday, isSameDay } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import type { DailyWeather } from "@/lib/weather";
+import { WeatherIcon } from "@/components/weather/weather-icon";
 
 const HOUR_START = 6;   // ab 06:00
 const HOUR_END   = 23;  // bis 23:00
@@ -18,9 +20,10 @@ interface WeekGridProps {
   members: FamilyMember[];
   onDayClick: (date: Date) => void;
   onEventClick: (id: string) => void;
+  weather?: Record<string, DailyWeather>;
 }
 
-export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick }: WeekGridProps) {
+export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick, weather = {} }: WeekGridProps) {
   const days = getWeekDays(weekStart);
   const scrollRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -188,6 +191,8 @@ export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick 
         <div className="border-r" />
         {days.map((day) => {
           const today = isToday(day);
+          const dateStr = formatDate(day, "yyyy-MM-dd");
+          const w = weather[dateStr];
           return (
             <div key={day.toISOString()} className="py-2 text-center border-r last:border-r-0">
               <p className="text-xs text-muted-foreground">{formatDate(day, "EEE")}</p>
@@ -200,6 +205,15 @@ export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick 
               >
                 {day.getDate()}
               </button>
+              {w && (
+                <WeatherIcon
+                  code={w.weatherCode}
+                  tempMax={w.tempMax}
+                  tempMin={w.tempMin}
+                  size="sm"
+                  className="mt-1 mx-auto"
+                />
+              )}
             </div>
           );
         })}

@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useFamilyStore, type FamilyMember } from "@/lib/stores/family-store";
+import { useWeatherStore } from "@/lib/stores/weather-store";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { wmoIcon } from "@/lib/weather";
 
 const COLORS = [
   "#6366f1", "#ec4899", "#f59e0b", "#10b981",
@@ -40,8 +42,10 @@ type AddChildFormData = z.infer<typeof addChildSchema>;
 
 export function FamilySettingsClient() {
   const { familyName, members, updateFamilyName, addMember, updateMember, removeMember } = useFamilyStore();
+  const { city, locationName, daily, loading: weatherLoading, error: weatherError, setLocation } = useWeatherStore();
   const [addChildOpen, setAddChildOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [cityInput, setCityInput] = useState(city);
 
   const familyForm = useForm<FamilyFormData>({
     resolver: zodResolver(familySchema),
@@ -71,6 +75,17 @@ export function FamilySettingsClient() {
     toast.success(`${member.name} entfernt`);
   };
 
+  const handleSetCity = async () => {
+    if (!cityInput.trim()) return;
+    const ok = await setLocation(cityInput.trim());
+    if (ok) toast.success(`Wetter-Standort: ${locationName || cityInput}`);
+    else toast.error(weatherError ?? "Standort nicht gefunden");
+  };
+
+  // Heute-Wetter für Vorschau
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayWeather = daily.find((d) => d.date === todayStr);
+
   return (
     <div className="space-y-6">
       {/* Familienname */}
@@ -81,6 +96,43 @@ export function FamilySettingsClient() {
             <Input {...familyForm.register("name")} placeholder="Familienname" className="flex-1" />
             <Button type="submit">Speichern</Button>
           </form>
+        </CardContent>
+      </Card>
+
+      {/* Wetter-Standort */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Wetter-Standort</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex gap-2">
+            <Input
+              placeholder="z.B. München"
+              value={cityInput}
+              onChange={(e) => setCityInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSetCity()}
+              className="flex-1"
+            />
+            <Button onClick={handleSetCity} disabled={weatherLoading}>
+              {weatherLoading ? "Lädt…" : "Speichern"}
+            </Button>
+          </div>
+          {weatherError && (
+            <p className="text-sm text-destructive">{weatherError}</p>
+          )}
+          {todayWeather && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="text-base">{wmoIcon(todayWeather.weatherCode)}</span>
+              <span>
+                {locationName} · heute {todayWeather.tempMax}° / {todayWeather.tempMin}°
+              </span>
+            </div>
+          )}
+          {!city && (
+            <p className="text-xs text-muted-foreground">
+              Gib deinen Wohnort ein, um Wetter-Icons im Kalender zu sehen.
+            </p>
+          )}
         </CardContent>
       </Card>
 

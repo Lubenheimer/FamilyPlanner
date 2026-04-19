@@ -1,15 +1,17 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEventStore } from "@/lib/stores/event-store";
 import { useFamilyStore } from "@/lib/stores/family-store";
+import { useWeatherStore } from "@/lib/stores/weather-store";
 import { EventDialog } from "@/components/calendar/event-dialog";
 import { CalendarViewToggle } from "@/components/calendar/view-toggle";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { addDays, formatDate, isToday, isSameDay } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import { wmoIcon, wmoLabel } from "@/lib/weather";
 
 const HOUR_START = 6;
 const HOUR_END   = 23;
@@ -30,6 +32,18 @@ function DayView() {
 
   const { getEventsInRange } = useEventStore();
   const { members } = useFamilyStore();
+  const { getDailyForDate, getHourlyForDate, refresh } = useWeatherStore();
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const dateStr = formatDate(day, "yyyy-MM-dd");
+  const dailyWeather = getDailyForDate(dateStr);
+  const hourlyWeather = getHourlyForDate(dateStr).filter(
+    (h) => {
+      const hour = new Date(h.time).getHours();
+      return hour >= HOUR_START && hour < HOUR_END;
+    }
+  );
 
   const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
   const dayEnd   = new Date(day); dayEnd.setHours(23, 59, 59);
@@ -67,9 +81,22 @@ function DayView() {
           <Button variant="outline" size="icon" onClick={() => setDay((d) => addDays(d, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
-          <h2 className={cn("text-base font-semibold ml-1", today && "text-indigo-700")}>
-            {formatDate(day, "EEEE, dd. MMMM yyyy")}
-          </h2>
+          <div className="flex items-center gap-2 ml-1">
+            <h2 className={cn("text-base font-semibold", today && "text-indigo-700")}>
+              {formatDate(day, "EEEE, dd. MMMM yyyy")}
+            </h2>
+            {dailyWeather && (
+              <span
+                className="text-sm"
+                title={`${wmoLabel(dailyWeather.weatherCode)} · ${dailyWeather.tempMax}° / ${dailyWeather.tempMin}°`}
+              >
+                {wmoIcon(dailyWeather.weatherCode)}{" "}
+                <span className="text-xs text-muted-foreground">
+                  {dailyWeather.tempMax}° / {dailyWeather.tempMin}°
+                </span>
+              </span>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <CalendarViewToggle current="day" />
@@ -78,6 +105,29 @@ function DayView() {
           </Button>
         </div>
       </div>
+
+      {/* ── Stündliche Wetter-Leiste ── */}
+      {hourlyWeather.length > 0 && (
+        <div className="rounded-xl border bg-white shadow-sm overflow-x-auto">
+          <div className="flex min-w-max px-2 py-2 gap-1">
+            {hourlyWeather.map((h) => {
+              const hour = new Date(h.time).getHours();
+              return (
+                <div
+                  key={h.time}
+                  className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg hover:bg-muted/30 transition-colors min-w-[44px]"
+                >
+                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                    {String(hour).padStart(2, "0")}:00
+                  </span>
+                  <span className="text-sm">{wmoIcon(h.weatherCode)}</span>
+                  <span className="text-[11px] font-medium tabular-nums">{h.temp}°</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border bg-white shadow-sm overflow-hidden">
         {/* Ganztägig */}

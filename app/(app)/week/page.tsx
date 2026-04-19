@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEventStore } from "@/lib/stores/event-store";
 import { useFamilyStore } from "@/lib/stores/family-store";
+import { useWeatherStore } from "@/lib/stores/weather-store";
 import { WeekGrid } from "@/components/calendar/week-grid";
 import { EventDialog } from "@/components/calendar/event-dialog";
 import { CalendarViewToggle } from "@/components/calendar/view-toggle";
@@ -18,6 +19,10 @@ export default function WeekPage() {
 
   const { getEventsInRange } = useEventStore();
   const { members } = useFamilyStore();
+  const { dailyMap, refresh } = useWeatherStore();
+
+  // Wetter beim ersten Render auffrischen (wenn Standort gesetzt + Cache veraltet)
+  useEffect(() => { refresh(); }, [refresh]);
 
   const weekEnd = addDays(weekStart, 6);
   weekEnd.setHours(23, 59, 59);
@@ -66,6 +71,7 @@ export default function WeekPage() {
         members={members}
         onDayClick={handleDayClick}
         onEventClick={handleEventClick}
+        weather={dailyMap()}
       />
 
       <EventDialog

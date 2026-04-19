@@ -4,6 +4,8 @@ import type { CalendarEvent } from "@/lib/stores/event-store";
 import type { FamilyMember } from "@/lib/stores/family-store";
 import { isSameDay, isToday, formatDate } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import type { DailyWeather } from "@/lib/weather";
+import { wmoIcon } from "@/lib/weather";
 
 const DE_WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
@@ -14,9 +16,10 @@ interface MonthGridProps {
   members: FamilyMember[];
   onDayClick: (date: Date) => void;
   onEventClick: (id: string) => void;
+  weather?: Record<string, DailyWeather>;
 }
 
-export function MonthGrid({ year, month, events, members, onDayClick, onEventClick }: MonthGridProps) {
+export function MonthGrid({ year, month, events, members, onDayClick, onEventClick, weather = {} }: MonthGridProps) {
   // Alle Tage im Sicht-Raster aufbauen (Mo–So, mit Vor-/Nachmonats-Tagen)
   const firstDay = new Date(year, month, 1);
   const lastDay  = new Date(year, month + 1, 0);
@@ -62,6 +65,8 @@ export function MonthGrid({ year, month, events, members, onDayClick, onEventCli
           const dayEvents = getEventsForDay(day);
           const overflow = dayEvents.length - MAX_VISIBLE;
           const isLastRow = idx >= cells.length - 7;
+          const dateStr = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+          const w = weather[dateStr];
 
           return (
             <div
@@ -76,11 +81,11 @@ export function MonthGrid({ year, month, events, members, onDayClick, onEventCli
                 today && "bg-indigo-50/40",
               )}
             >
-              {/* Tag-Nummer */}
-              <div className="flex justify-center mb-1">
+              {/* Tag-Nummer + Wetter */}
+              <div className="flex items-center justify-between mb-1 px-0.5">
                 <span
                   className={cn(
-                    "flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium",
+                    "flex h-7 w-7 items-center justify-center rounded-full text-sm font-medium shrink-0",
                     today && "bg-indigo-600 text-white",
                     !today && isCurrentMonth && "text-foreground",
                     !today && !isCurrentMonth && "text-muted-foreground/50",
@@ -88,6 +93,11 @@ export function MonthGrid({ year, month, events, members, onDayClick, onEventCli
                 >
                   {day.getDate()}
                 </span>
+                {w && isCurrentMonth && (
+                  <span className="text-sm leading-none" title={`${w.tempMax}° / ${w.tempMin}°`}>
+                    {wmoIcon(w.weatherCode)}
+                  </span>
+                )}
               </div>
 
               {/* Events */}

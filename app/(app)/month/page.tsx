@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useEventStore } from "@/lib/stores/event-store";
 import { useFamilyStore } from "@/lib/stores/family-store";
+import { useWeatherStore } from "@/lib/stores/weather-store";
 import { MonthGrid } from "@/components/calendar/month-grid";
 import { EventDialog } from "@/components/calendar/event-dialog";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,9 @@ export default function MonthPage() {
 
   const { getEventsInRange } = useEventStore();
   const { members } = useFamilyStore();
+  const { dailyMap, refresh } = useWeatherStore();
+
+  useEffect(() => { refresh(); }, [refresh]);
 
   const monthStart = new Date(year, month, 1);
   const monthEnd   = new Date(year, month + 1, 0, 23, 59, 59);
@@ -66,6 +70,7 @@ export default function MonthPage() {
         events={monthEvents} members={members}
         onDayClick={handleDayClick}
         onEventClick={handleEventClick}
+        weather={dailyMap()}
       />
 
       <EventDialog
