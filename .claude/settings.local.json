@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --no-turbopack --yes)",
+      "Read(//c/Users/micro/Documents/Coding/**)",
+      "Bash(npx create-next-app@latest family-planner-tmp --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --no-turbopack --yes)",
+      "Bash(cp -r \"C:/Users/micro/Documents/Coding/family-planner-tmp/.\" \"C:/Users/micro/Documents/Coding/FamilyPlanner/\")",
+      "Bash(rm -rf \"C:/Users/micro/Documents/Coding/family-planner-tmp\")",
+      "Bash(cp -r \"C:/Users/micro/Documents/Coding/family-planner-tmp/app\" \"C:/Users/micro/Documents/Coding/FamilyPlanner/\")",
+      "Bash(cp -r \"C:/Users/micro/Documents/Coding/family-planner-tmp/public\" \"C:/Users/micro/Documents/Coding/FamilyPlanner/\")",
+      "Bash(npm install *)"
+    ]
+  }
+}
