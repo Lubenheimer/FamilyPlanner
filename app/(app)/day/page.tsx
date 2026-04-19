@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useEventStore } from "@/lib/stores/event-store";
 import { useFamilyStore } from "@/lib/stores/family-store";
 import { EventDialog } from "@/components/calendar/event-dialog";
@@ -16,10 +16,14 @@ const HOUR_END   = 23;
 const HOURS      = Array.from({ length: HOUR_END - HOUR_START }, (_, i) => HOUR_START + i);
 const SLOT_H     = 64;
 
-export default function DayPage() {
+// useSearchParams muss in einer eigenen Komponente mit Suspense gekapselt sein
+function DayView() {
   const searchParams = useSearchParams();
   const dateParam = searchParams.get("date");
-  const [day, setDay] = useState<Date>(() => dateParam ? new Date(dateParam) : new Date());
+
+  const [day, setDay] = useState<Date>(() =>
+    dateParam ? new Date(dateParam) : new Date()
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
@@ -29,7 +33,9 @@ export default function DayPage() {
 
   const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0);
   const dayEnd   = new Date(day); dayEnd.setHours(23, 59, 59);
-  const dayEvents = getEventsInRange(dayStart, dayEnd).filter((e) => isSameDay(new Date(e.startsAt), day));
+  const dayEvents = getEventsInRange(dayStart, dayEnd).filter((e) =>
+    isSameDay(new Date(e.startsAt), day)
+  );
 
   const allDay = dayEvents.filter((e) => e.allDay);
   const timed  = dayEvents.filter((e) => !e.allDay).sort(
@@ -54,16 +60,22 @@ export default function DayPage() {
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setDay((d) => addDays(d, -1))}><ChevronLeft className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => setDay((d) => addDays(d, -1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setDay(new Date())}>Heute</Button>
-          <Button variant="outline" size="icon" onClick={() => setDay((d) => addDays(d, 1))}><ChevronRight className="h-4 w-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => setDay((d) => addDays(d, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
           <h2 className={cn("text-base font-semibold ml-1", today && "text-indigo-700")}>
             {formatDate(day, "EEEE, dd. MMMM yyyy")}
           </h2>
         </div>
         <div className="flex items-center gap-2">
           <CalendarViewToggle current="day" />
-          <Button onClick={() => openNew()} size="sm"><Plus className="h-4 w-4 mr-1" /> Termin</Button>
+          <Button onClick={() => openNew()} size="sm">
+            <Plus className="h-4 w-4 mr-1" /> Termin
+          </Button>
         </div>
       </div>
 
@@ -75,7 +87,11 @@ export default function DayPage() {
             {allDay.map((e) => (
               <button
                 key={e.id}
-                onClick={() => { setEditingEventId(e.id.split("_")[0]); setSelectedDate(null); setDialogOpen(true); }}
+                onClick={() => {
+                  setEditingEventId(e.id.split("_")[0]);
+                  setSelectedDate(null);
+                  setDialogOpen(true);
+                }}
                 className="w-full text-left rounded-md px-3 py-1.5 text-sm font-medium text-white"
                 style={{ backgroundColor: getMemberColor(e.createdBy) }}
               >
@@ -109,12 +125,19 @@ export default function DayPage() {
             const top    = (startH - HOUR_START) * SLOT_H;
             const height = Math.max((endH - startH) * SLOT_H, 24);
             const color  = getMemberColor(event.createdBy);
-            const attendeeNames = event.attendeeIds.map((id) => members.find((m) => m.id === id)?.name).filter(Boolean);
+            const attendeeNames = event.attendeeIds
+              .map((id) => members.find((m) => m.id === id)?.name)
+              .filter(Boolean);
 
             return (
               <button
                 key={event.id}
-                onClick={(e) => { e.stopPropagation(); setEditingEventId(event.id.split("_")[0]); setSelectedDate(null); setDialogOpen(true); }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingEventId(event.id.split("_")[0]);
+                  setSelectedDate(null);
+                  setDialogOpen(true);
+                }}
                 className="absolute rounded-lg text-white text-left px-3 py-2 shadow-sm hover:brightness-110 transition-all"
                 style={{ top: top + 1, height: height - 2, left: 52, right: 8, backgroundColor: color }}
               >
@@ -132,7 +155,25 @@ export default function DayPage() {
         </div>
       </div>
 
-      <EventDialog open={dialogOpen} onOpenChange={setDialogOpen} initialDate={selectedDate} eventId={editingEventId} />
+      <EventDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        initialDate={selectedDate}
+        eventId={editingEventId}
+      />
     </div>
+  );
+}
+
+// Suspense-Wrapper — Pflicht für useSearchParams im Static Export
+export default function DayPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-[400px] items-center justify-center">
+        <div className="text-muted-foreground text-sm">Lade Tagesansicht…</div>
+      </div>
+    }>
+      <DayView />
+    </Suspense>
   );
 }

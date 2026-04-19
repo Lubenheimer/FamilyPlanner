@@ -10,6 +10,15 @@ export default function RootPage() {
   const currentMemberId = useFamilyStore((s) => s.currentMemberId);
 
   useEffect(() => {
+    // GitHub Pages SPA-Redirect: ?p=/pfad wiederherstellen
+    const params = new URLSearchParams(window.location.search);
+    const redirectPath = params.get("p");
+    if (redirectPath) {
+      router.replace(redirectPath);
+      return;
+    }
+
+    // Normale Routing-Logik
     if (!isSetup) {
       router.replace("/onboarding");
     } else if (!currentMemberId) {

@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <title>FamilyPlanner</title>
+  <!--
+    SPA-Redirect für GitHub Pages:
+    Unbekannte Routen landen hier → wir leiten zur index.html weiter
+    und kodieren den Pfad als Query-Parameter, damit der Client-Router ihn wiederherstellen kann.
+  -->
+  <script>
+    var l = window.location;
+    var basePath = '/FamilyPlanner';
+    var path = l.pathname.replace(basePath, '') || '/';
+    var redirectUrl = basePath + '/?p=' + encodeURIComponent(path + l.search) + l.hash;
+    l.replace(redirectUrl);
+  </script>
+</head>
+<body>
+  <p>Weiterleitung…</p>
+</body>
+</html>
