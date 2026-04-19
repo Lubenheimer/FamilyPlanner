@@ -15,6 +15,7 @@ import { TripDialog } from "./trip-dialog";
 import {
   MapPin, Euro, CalendarDays, Star, Pencil, Trash2, Plus, ThumbsUp,
 } from "lucide-react";
+import { TripWeatherBadge } from "@/components/weather/trip-weather-badge";
 import { toast } from "sonner";
 
 const STATUS_LABEL: Record<string, string> = {
@@ -136,6 +137,15 @@ export function TripDetail({ trip, open, onOpenChange, onDeleted }: TripDetailPr
 
             {trip.description && (
               <p className="text-sm text-muted-foreground leading-relaxed">{trip.description}</p>
+            )}
+
+            {/* Wetter-Vorhersage für das Ausflugsdatum */}
+            {trip.plannedDate && (
+              <TripWeatherBadge
+                plannedDate={trip.plannedDate}
+                location={trip.location}
+                variant="full"
+              />
             )}
 
             {/* Votes */}

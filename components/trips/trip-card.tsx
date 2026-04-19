@@ -5,6 +5,7 @@ import { useFamilyStore } from "@/lib/stores/family-store";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { MapPin, Euro, CalendarDays, Star, ThumbsUp } from "lucide-react";
+import { TripWeatherBadge } from "@/components/weather/trip-weather-badge";
 
 interface TripCardProps {
   trip: Trip;
@@ -63,6 +64,13 @@ export function TripCard({ trip, onClick }: TripCardProps) {
             <CalendarDays className="h-3 w-3" />
             {new Date(trip.plannedDate).toLocaleDateString("de-DE")}
           </span>
+        )}
+        {trip.plannedDate && (
+          <TripWeatherBadge
+            plannedDate={trip.plannedDate}
+            location={trip.location}
+            variant="compact"
+          />
         )}
         {avgStars !== null && (
           <span className="flex items-center gap-1 text-amber-500">
