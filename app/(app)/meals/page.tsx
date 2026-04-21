@@ -6,14 +6,16 @@ import { startOfWeek, addWeeks, subWeeks, formatDate } from "@/lib/date-utils";
 import { MealPlan } from "@/components/meals/meal-plan";
 import { RecipeDialog } from "@/components/meals/recipe-dialog";
 import { RecipeBrowser } from "@/components/meals/recipe-browser";
+import { RecipeList } from "@/components/meals/recipe-list";
 import { ShoppingList } from "@/components/meals/shopping-list";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Plus, ShoppingCart } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, ShoppingCart, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export default function MealsPage() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [recipeDialogOpen, setRecipeDialogOpen] = useState(false);
+  const [recipeListOpen, setRecipeListOpen] = useState(false);
   const [browserOpen, setBrowserOpen] = useState(false);
   const [shoppingListOpen, setShoppingListOpen] = useState(false);
   const [selectedMeal, setSelectedMeal] = useState<{ date: string; slot: MealSlot } | null>(null);
@@ -48,7 +50,7 @@ export default function MealsPage() {
   return (
     <div className="space-y-5 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Button size="icon" variant="outline" onClick={() => setWeekStart(subWeeks(weekStart, 1))}>
             <ChevronLeft className="h-4 w-4" />
@@ -64,10 +66,13 @@ export default function MealsPage() {
 
         <div className="flex gap-2">
           <Button onClick={handleGenerateList} variant="outline" size="sm" className="gap-1.5">
-            <ShoppingCart className="h-4 w-4" /> Liste
+            <ShoppingCart className="h-4 w-4" /> Einkaufsliste
+          </Button>
+          <Button onClick={() => setRecipeListOpen(true)} variant="outline" size="sm" className="gap-1.5">
+            <BookOpen className="h-4 w-4" /> Rezepte
           </Button>
           <Button onClick={() => setRecipeDialogOpen(true)} size="sm" className="gap-1.5">
-            <Plus className="h-4 w-4" /> Rezept
+            <Plus className="h-4 w-4" /> Neues Rezept
           </Button>
         </div>
       </div>
@@ -84,6 +89,8 @@ export default function MealsPage() {
 
       {/* Dialoge */}
       <RecipeDialog open={recipeDialogOpen} onOpenChange={setRecipeDialogOpen} />
+
+      <RecipeList open={recipeListOpen} onOpenChange={setRecipeListOpen} />
 
       {selectedMeal && (
         <RecipeBrowser
