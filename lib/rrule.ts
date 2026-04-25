@@ -24,6 +24,106 @@ export function parseRRule(s: string): RRule {
 }
 
 /**
+ * Generiert alle Vorkommen einer RRule als Datum-Array.
+ * Bricht ab wenn until überschritten ODER maxCount erreicht.
+ */
+function* generateOccurrences(
+  start: Date,
+  rule: RRule,
+  maxCount: number,
+  until: Date | null
+): Generator<{ date: Date; index: number }> {
+  const interval = rule.interval ?? 1;
+  let index = 0;
+
+  switch (rule.freq) {
+    case "daily": {
+      for (let i = 0; index < maxCount; i++) {
+        const d = new Date(start);
+        d.setDate(d.getDate() + i * interval);
+        if (until && d > until) return;
+        yield { date: d, index };
+        index++;
+      }
+      break;
+    }
+
+    case "weekly": {
+      if (rule.byDay && rule.byDay.length > 0) {
+        /**
+         * Korrekte weekly+byDay-Logik mit Interval-Unterstützung:
+         * Wir arbeiten in "Wochen-Blöcken". Innerhalb jedes Blocks
+         * werden alle byDay-Tage erzeugt. Dann springen wir `interval`
+         * Wochen weiter zum nächsten Block.
+         *
+         * Der erste Block beginnt an der ISO-Woche des Starttermins.
+         * Tage im ersten Block, die vor dem Startdatum liegen, werden
+         * übersprungen.
+         */
+        const startDow = start.getDay(); // 0=So … 6=Sa
+
+        // Wochenbeginn (Sonntag-basiert) des Starttermins
+        const weekOrigin = new Date(start);
+        weekOrigin.setDate(start.getDate() - startDow);
+        weekOrigin.setHours(start.getHours(), start.getMinutes(), start.getSeconds(), start.getMilliseconds());
+
+        // byDay aufsteigend sortieren (So=0 … Sa=6)
+        const sortedDays = [...rule.byDay].sort((a, b) => a - b);
+
+        let weekBlock = 0;
+        outer: while (index < maxCount) {
+          for (const dow of sortedDays) {
+            if (index >= maxCount) break outer;
+
+            const d = new Date(weekOrigin);
+            d.setDate(weekOrigin.getDate() + weekBlock * 7 * interval + dow);
+
+            // Erste Woche: Tage vor Startdatum überspringen
+            if (d < start) continue;
+
+            if (until && d > until) return;
+            yield { date: d, index };
+            index++;
+          }
+          weekBlock++;
+        }
+      } else {
+        for (let i = 0; index < maxCount; i++) {
+          const d = new Date(start);
+          d.setDate(d.getDate() + i * 7 * interval);
+          if (until && d > until) return;
+          yield { date: d, index };
+          index++;
+        }
+      }
+      break;
+    }
+
+    case "monthly": {
+      for (let i = 0; index < maxCount; i++) {
+        const d = new Date(start);
+        d.setMonth(d.getMonth() + i * interval);
+        if (until && d > until) return;
+        yield { date: d, index };
+        index++;
+      }
+      break;
+    }
+
+    case "yearly": {
+      for (let i = 0; index < maxCount; i++) {
+        const d = new Date(start);
+        d.setFullYear(d.getFullYear() + i * interval);
+        if (until && d > until) return;
+        yield { date: d, index };
+        index++;
+      }
+      break;
+    }
+  }
+}
+
+/**
  * Expandiert ein wiederkehrendes Event in Einzeltermine innerhalb [rangeStart, rangeEnd].
  * Gibt virtuelle Kopien zurück (gleiche id + Suffix, verschobene Zeiten).
  */
@@ -37,67 +137,31 @@ export function expandRecurring<T extends {
 
   const rule = parseRRule(event.rrule);
   const origStart = new Date(event.startsAt);
-  const origEnd = new Date(event.endsAt);
-  const duration = origEnd.getTime() - origStart.getTime();
-  const interval = rule.interval ?? 1;
-  const until = rule.until ? new Date(rule.until) : null;
-  const maxCount = rule.count ?? 365;
+  const origEnd   = new Date(event.endsAt);
+  const duration  = origEnd.getTime() - origStart.getTime();
+
+  // until-Datum inklusive (bis Tagesende)
+  const until = rule.until ? new Date(rule.until + "T23:59:59") : null;
+
+  // Sicherheitslimit: ohne explizites count maximal 1825 Vorkommen (5 Jahre täglich)
+  const maxCount = rule.count ?? 1825;
 
   const results: T[] = [];
-  let current = new Date(origStart);
-  let count = 0;
 
-  while (count < maxCount) {
-    // Abbruchbedingungen
-    if (until && current > until) break;
-    if (current > rangeEnd) break;
+  for (const { date, index } of generateOccurrences(origStart, rule, maxCount, until)) {
+    // Sobald Vorkommen nach rangeEnd beginnt → fertig
+    if (date > rangeEnd) break;
 
-    // Nur ausgeben wenn im Bereich
-    const currentEnd = new Date(current.getTime() + duration);
-    if (currentEnd >= rangeStart) {
+    const occEnd = new Date(date.getTime() + duration);
+    // Nur ausgeben wenn das Vorkommen den Bereich [rangeStart, rangeEnd] überlappt
+    if (occEnd >= rangeStart) {
       results.push({
         ...event,
-        id: `${event.id}_${count}`,
-        startsAt: current.toISOString(),
-        endsAt: currentEnd.toISOString(),
+        id: `${event.id}_${index}`,
+        startsAt: date.toISOString(),
+        endsAt:   occEnd.toISOString(),
       });
     }
-
-    // Nächsten Termin berechnen
-    const next = new Date(current);
-    switch (rule.freq) {
-      case "daily":
-        next.setDate(next.getDate() + interval);
-        break;
-      case "weekly":
-        if (rule.byDay && rule.byDay.length > 0) {
-          // Nächsten passenden Wochentag finden
-          let found = false;
-          for (let d = 1; d <= 7; d++) {
-            const candidate = new Date(next);
-            candidate.setDate(candidate.getDate() + d);
-            if (rule.byDay.includes(candidate.getDay())) {
-              next.setDate(next.getDate() + d);
-              found = true;
-              break;
-            }
-          }
-          if (!found) next.setDate(next.getDate() + 7 * interval);
-        } else {
-          next.setDate(next.getDate() + 7 * interval);
-        }
-        break;
-      case "monthly":
-        next.setMonth(next.getMonth() + interval);
-        break;
-      case "yearly":
-        next.setFullYear(next.getFullYear() + interval);
-        break;
-    }
-
-    if (next <= current) break; // Endlosschleife-Schutz
-    current = next;
-    count++;
   }
 
   return results;

@@ -109,11 +109,14 @@ export function MonthGrid({ year, month, events, members, onDayClick, onEventCli
                     <button
                       key={event.id}
                       onClick={(e) => { e.stopPropagation(); onEventClick(event.id.split("_")[0]); }}
-                      className="w-full text-left rounded px-1.5 py-0.5 text-xs font-medium text-white truncate hover:opacity-90 transition-opacity"
+                      className="w-full text-left rounded px-1.5 py-0.5 text-xs font-medium text-white truncate hover:opacity-90 transition-opacity flex items-center gap-0.5"
                       style={{ backgroundColor: color }}
                     >
-                      {time && <span className="opacity-75 mr-1">{time}</span>}
-                      {event.title}
+                      <span className="truncate">
+                        {time && <span className="opacity-75 mr-1">{time}</span>}
+                        {event.title}
+                      </span>
+                      {event.rrule && <span className="opacity-70 shrink-0 text-[10px]">↻</span>}
                     </button>
                   );
                 })}

@@ -174,10 +174,11 @@ export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick,
                   <button
                     key={e.id}
                     onClick={(ev) => { ev.stopPropagation(); onEventClick(e.id.split("_")[0]); }}
-                    className="w-full text-left rounded px-1.5 py-0.5 text-xs font-medium text-white truncate"
+                    className="w-full text-left rounded px-1.5 py-0.5 text-xs font-medium text-white truncate flex items-center gap-1"
                     style={{ backgroundColor: getMemberColor(e) }}
                   >
-                    {e.title}
+                    <span className="truncate">{e.title}</span>
+                    {e.rrule && <span className="opacity-70 shrink-0">↻</span>}
                   </button>
                 ))}
               </div>
@@ -293,7 +294,7 @@ export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick,
                   return (
                     <button
                       key={event.id}
-                      draggable={!event.rrule} // Wiederkehrende nicht draggable (zu komplex)
+                      draggable={!event.rrule} // Wiederkehrende nicht draggable
                       onDragStart={(e) => handleDragStart(e, event)}
                       onClick={(e) => { e.stopPropagation(); onEventClick(event.id.split("_")[0]); }}
                       className="absolute rounded-md text-white text-left overflow-hidden px-1.5 py-0.5 shadow-sm hover:brightness-110 transition-all z-10"
@@ -308,10 +309,14 @@ export function WeekGrid({ weekStart, events, members, onDayClick, onEventClick,
                       {short ? (
                         <p className="text-[10px] font-medium truncate leading-tight">
                           {startTime} {event.title}
+                          {event.rrule && <span className="opacity-70 ml-0.5">↻</span>}
                         </p>
                       ) : (
                         <>
-                          <p className="text-[10px] opacity-80 leading-tight">{startTime}–{endTime}</p>
+                          <div className="flex items-center justify-between gap-1">
+                            <p className="text-[10px] opacity-80 leading-tight">{startTime}–{endTime}</p>
+                            {event.rrule && <span className="text-[10px] opacity-70 shrink-0">↻</span>}
+                          </div>
                           <p className="text-xs font-semibold truncate leading-tight">{event.title}</p>
                           {event.location && (
                             <p className="text-[10px] opacity-70 truncate">{event.location}</p>

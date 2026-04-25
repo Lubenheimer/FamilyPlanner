@@ -184,8 +184,12 @@ export function EventDialog({ open, onOpenChange, initialDate, eventId }: EventD
 
   const handleDelete = () => {
     if (!existing) return;
+    const msg = existing.rrule
+      ? `"${existing.title}" ist ein wiederkehrender Termin.\nAlle Vorkommen wirklich löschen?`
+      : `"${existing.title}" wirklich löschen?`;
+    if (!confirm(msg)) return;
     deleteEvent(existing.id);
-    toast.success("Termin gelöscht");
+    toast.success(existing.rrule ? "Alle Vorkommen gelöscht" : "Termin gelöscht");
     onOpenChange(false);
   };
 
@@ -194,6 +198,12 @@ export function EventDialog({ open, onOpenChange, initialDate, eventId }: EventD
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Termin bearbeiten" : "Neuer Termin"}</DialogTitle>
+          {isEdit && existing?.rrule && (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2.5 py-1.5 flex items-center gap-1.5 mt-1">
+              <RotateCcw className="h-3 w-3 shrink-0" />
+              Wiederkehrender Termin — Änderungen gelten für alle Vorkommen
+            </p>
+          )}
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
