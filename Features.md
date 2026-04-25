@@ -11,108 +11,126 @@ Ein zentraler Ort, an dem eine vierköpfige Familie Wochen plant, Ausflüge doku
 
 ---
 
-## Feature-Übersicht (nach Phasen)
+## Implementierungsstand
 
-### Phase 0 — Fundament
-- Familien-Space anlegen
-- Benutzerverwaltung (Eltern/Kinder) mit Rollen & Rechten
+### ✅ Phase 0 — Fundament (lokal-first)
+- Familien-Space anlegen (Onboarding-Flow)
+- Benutzerverwaltung (Eltern/Kinder) mit Rollen & Farben
 - Individuelle Farbe pro Familienmitglied
-- Auth (E-Mail + Magic Link), Kinder-Modus ohne Passwort auf Familien-Tablet
-- Mehrsprachigkeit (DE zuerst)
+- Familien-Einstellungen (Mitglieder bearbeiten, hinzufügen, entfernen)
+- Aktives Mitglied wechseln (Login-Seite, kein echtes Auth)
+- Mehrsprachigkeit: Deutsch
+- **Offen:** Echtes Auth (Magic Link, Kind-Modus), Backend/Sync zwischen Geräten
 
-### Phase 1 — Wochenplaner & Termine (MVP)
-- **Wochenansicht** mit Spalten pro Person oder gemeinsam
+### ✅ Phase 1 — Wochenplaner & Termine
+- **Wochenansicht** mit Stunden-Grid (06:00–23:00), Jetzt-Linie
 - **Monatsansicht** und **Tagesansicht**
-- **Termine CRUD**
-  - Titel, Ort, Notizen
-  - Von–bis, Dauer, ganztägig
-  - Teilnehmer (wer ist dabei)
-  - Farbe pro Person automatisch
-  - Anhänge (Bilder, PDFs)
-- **Wiederkehrende Termine** (täglich, wöchentlich, monatlich, jährlich, Ausnahmen einzeln anpassbar)
-- **Erinnerungen** via Web Push und/oder E-Mail, mehrere Vorlaufzeiten
-- **Schnell-Erfassung** per natürlichsprachlicher Eingabe („Morgen 15 Uhr Zahnarzt Lea")
-- **Drag & Drop** zum Verschieben
+- **Termine CRUD:** Titel, Ort, Notizen, Von–Bis, Ganztägig, Teilnehmer, Farbe pro Person
+- **Drag & Drop** in der Wochenansicht (15-Min-Snapping, Spaltenüberlappungs-Layout)
+- **Wiederkehrende Termine:** Täglich / Wöchentlich (Wochentag-Auswahl, Interval) / Monatlich / Jährlich
+  - Korrekte Expansion mit Limit (1825 Vorkommen = 5 Jahre täglich)
+  - Visueller Indikator (↻) in Wochen- und Monatsansicht
+  - Lösch-/Bearbeitungshinweis: Änderungen gelten für alle Vorkommen
+- **Offen:** Erinnerungen (Web Push), Schnell-Erfassung per Sprache, Anhänge
 
-### Phase 2 — Kalender-Integration
-- **Google Calendar** (OAuth, mehrere Kalender pro User auswählbar)
-- **Outlook / Microsoft 365** (Graph API, privat + geschäftlich)
-- **Zwei-Wege-Sync** optional pro Kalender konfigurierbar
-- **Read-only Kalender** klar gekennzeichnet (Quelle sichtbar)
-- **Konfliktlösung** mit Audit-Log
-- **Live-Updates** via Webhooks, Fallback Polling
+### ✅ Phase 3 — Wetter-Integration
+- Wetter-Icons in Wochen- und Monatsansicht (bis 14 Tage, Open-Meteo)
+- Stundengenaue Prognose auf der Tagesansicht
+- Termin-/Ausflug-Ortsbezug → Wetter am Zielort
+- DWD BrightSky-Fallback (Deutschland)
 
-### Phase 3 — Wetter-Integration
-- Wetter-Icons in Wochen-/Monatsansicht (bis 14 Tage)
-- **Stundengenaue Prognose** am Termintag
-- **Termin-/Ausflug-Ortsbezug** → Wetter am Zielort
-- Unwetterwarnungen (wenn Provider unterstützt)
-- Provider: Open-Meteo oder BrightSky (DWD)
+### ✅ Phase 4 — Ausflüge: Backlog + Journal
+- **Backlog / Bucket List:** Titel, Beschreibung, Ort, Kosten, Dauer, Jahreszeit-Tags, Indoor/Outdoor
+- **Prio-Stimmen** pro Familienmitglied, Sortierung nach Beliebtheit
+- **Filter & Suche** mit Sortierung (Votes, Datum, Name, Kosten)
+- **Journal nach dem Ausflug:** Fotos (Base64), Freitext, Bewertung 1–5 ⭐ pro Person, Würden-wir-wiederholen-Flag, Ausgaben
+- **Wetter-Vorschau** am geplanten Ausflugsdatum und -ort
+- Status-Flow: Idee → Geplant → Erlebt
 
-### Phase 4 — Ausflüge: Backlog + Journal
-- **Backlog / Bucket List**
-  - Titel, Beschreibung, Ort (mit Karte)
-  - Geschätzte Kosten, Dauer, Jahreszeit-Tags
-  - Indoor/Outdoor, Mit-/Ohne-Kinder
-  - Prio-Stimmen pro Familienmitglied
-  - Filter & Suche
-- **Planung** aus Backlog → Termin mit Wetter-Check
-- **Packlisten-Vorlagen** (Wandern, Zoo, Schwimmbad …)
-- **Journal nach dem Ausflug**
-  - Fotos
-  - Freitext
-  - Bewertung 1–5 ⭐ pro Person
-  - „Würden wir wiederholen?"-Flag
-  - Erfasste Ausgaben
-- **Rückblicke**: Timeline, Karten-Ansicht, „Was haben wir letzten Sommer gemacht?"
+### ✅ Phase 5 — Essensplanung
+- **Wochenplan** für Frühstück/Mittag/Abend (7-Tage-Grid)
+- Wochennavigation (vor/zurück/heute)
+- **Rezepte-Bibliothek:** Titel, Zutaten (Menge/Einheit), Zeitaufwand, Kategorie, URL, Bild, Anleitung
+- **Rezeptverwaltung-Dialog:** Suche, Bearbeiten, Löschen, Rezeptlink
+- **Automatische Einkaufsliste:** Zutaten-Aggregation über die Woche, Abhaken, Löschen
+- **Offen:** Drag & Drop Rezept → Wochentag, Rezept-Import aus URLs
 
-### Phase 5 — Essensplanung
-- **Wochenplan** für Frühstück/Mittag/Abend
-- **Rezepte-Bibliothek**
-  - Zutaten, Mengen, Zeitaufwand, Kategorie
-  - Bild, Notizen, Favoriten
-- **Drag & Drop** Rezept → Wochentag
-- **Automatische Einkaufsliste** (Zutaten-Aggregation über die Woche)
-- **Rezept-Import** aus URLs (Schema.org-Parser, z. B. Chefkoch)
+### ✅ Phase 6 — Wunschzettel
+- Pro Kind eigener Wunschzettel
+- Einträge mit Bild-URL, Weblink, Preis, Priorität (1–5 ⭐), Kategorien
+- **Eltern-Sicht:** Status offen / reserviert (von wem) / gekauft — unsichtbar fürs Kind
+- Reservieren (Name eingeben), Als gekauft markieren, Bearbeiten, Löschen
+- **Offen:** Share-Link für Großeltern (read-only), URL-Metadata-Scraping
+
+### ✅ Phase 7 — Urlaubsplanung
+- **Urlaub-Entität:** Titel, Reiseziel, Zeitraum, Teilnehmer, Budget, Status (Idee/Gebucht/Abgeschlossen), Notizen
+- **Status-Tabs:** 💡 Ideen / ✅ Gebucht / 🏁 Erlebt mit Suche
+- **Karten-Ansicht:** Nächte-Berechnung, Teilnehmer-Avatare, Fortschrittsbalken Packliste
+- **Detail-Dialog (3 Tabs):**
+  - **Info:** Zeitraum, Budget, Teilnehmer, Notizen, Bearbeiten/Löschen
+  - **Packliste:** Vorlagen (🏖️ Strand / ⛷️ Ski / 🏙️ Städtetrip), eigene Items, Kategorien (Kleidung, Dokumente, Technik…), Fortschrittsbalken
+  - **Tagesplanung:** Tage mit Datum + Titel + Aktivitäten, inline bearbeiten/löschen
+
+---
+
+## Feature-Übersicht (nach Phasen) — Roadmap
+
+### Phase 2 — Kalender-Integration *(braucht Backend/OAuth)*
+- Google Calendar (OAuth, mehrere Kalender pro User)
+- Outlook / Microsoft 365 (Graph API)
+- Zwei-Wege-Sync optional konfigurierbar
+- Live-Updates via Webhooks
+
+### Phase 5 — Essensplanung (Reste)
+- Drag & Drop Rezept → Wochentag
+- Rezept-Import aus URLs (Schema.org-Parser, z.B. Chefkoch) *(braucht Server)*
 - „Was war letzte Woche?" zur Abwechslung
 
-### Phase 6 — Wunschzettel
-- Pro Kind eigener Wunschzettel
-- Einträge mit Bild, URL, Preis, Priorität
-- Kategorien (Geburtstag, Weihnachten, spontan)
-- **Eltern-Sicht** mit Status: offen / reserviert (von wem) / gekauft — unsichtbar fürs Kind
-- **Share-Link** für Großeltern/Paten (read-only, Reservierung möglich, kein Account)
-- **URL-Import** mit automatischem Metadata-Scraping (Bild, Titel, Preis)
+### Phase 6 — Wunschzettel (Reste)
+- Share-Link für Großeltern/Paten (read-only, Reservierung möglich) *(braucht Backend)*
+- URL-Import mit automatischem Metadata-Scraping (Bild, Titel, Preis)
 
-### Phase 7 — Urlaubsplanung
-- **Urlaub-Entität**: Zeitraum, Ziel, Teilnehmer, Budget, Status (Idee → gebucht → abgeschlossen)
-- **Packlisten** mit Vorlagen (Strand, Ski, Städtetrip)
-- **Reise-Dokumente**: PDF-Upload (Bordkarten, Hotelbestätigungen)
-- **Tagesplan** pro Urlaubstag, verknüpft mit Ausflug-Journal
-- **Schulferien-Overlay** nach Bundesland
-- Länder-Infos (Zeitzone, Währung, Notrufnummer)
-
-### Phase 8 — Nice-to-haves (laufend)
+### Phase 8 — Nice-to-haves (offen)
 - **Aufgaben/Chores** pro Kind mit Belohnungs-/Taschengeld-Tracker
 - **Geburtstags- & Jahrestag-Tracker** mit Vorlauf-Erinnerungen
 - **Arzt-/Impftermine** + Dokumenten-Archiv pro Kind
 - **Haushaltsbuch light**: Ausgaben aus Ausflügen/Urlauben aggregiert
 - **Familien-Pinnwand**: kurze Nachrichten, Bilder, Tageshighlights
 - **Jahresrückblick** automatisch generiert
-- **Assistenz-Shortcuts** (Siri/Google Assistant): Termin per Sprache
-- **Wallet-Passes** für Urlaubsdokumente
-- **iCal-Export** des Familienkalenders (read-only) für externe Tools
 - **Dark Mode** & Familien-Themes
+- **iCal-Export** (read-only) für externe Tools
+
+### Phase 0 Backend *(große strategische Entscheidung)*
+- Supabase (PostgreSQL + Auth + Realtime) oder Self-Hosting
+- Sync zwischen Geräten (iPhone Mama, Tablet Familie, etc.)
+- Echtes Auth: Magic Link für Eltern, Tablet-Modus für Kinder
+- Daten-Backup & Export
+
+---
+
+## Datenspeicherung (aktuell)
+
+Alle Daten liegen im **localStorage** des Browsers (Zustand + persist-Middleware):
+
+| Store | Key |
+|---|---|
+| Familie / Mitglieder | `family-planner:family` |
+| Kalender-Events | `family-planner:events` |
+| Ausflüge | `family-planner:trips` |
+| Essensplanung & Rezepte | `family-planner:meals` |
+| Wunschzettel | `family-planner:wishes` |
+| Urlaubsplanung | `family-planner:vacations` |
+| Wetter-Cache | `family-planner:weather` |
+
+⚠️ Kein Sync zwischen Geräten — jedes Gerät hat seinen eigenen Datenstand.
 
 ---
 
 ## Querschnitts-Features
 - **Suche** über alle Entitäten
-- **Benachrichtigungs-Center** (Push, E-Mail, In-App)
-- **Audit-Log** (wer hat was geändert)
-- **Export** der eigenen Daten (JSON/PDF)
-- **Backup & Restore**
-- **Accessibility** (Tastatur, Screenreader)
+- **Benachrichtigungs-Center** (Push, E-Mail, In-App) — geplant
+- **Export** der eigenen Daten (JSON/PDF) — geplant
+- **Accessibility** (Tastatur, Screenreader) — geplant
 
 ---
 
